@@ -612,3 +612,118 @@ select.finp option { background: #1e1248; color: white; }
 @media (max-width: 360px) {
   .welcome-title { font-size: 1.3rem; }
 }
+/* ===== FIX FOR REACT CLASS MISMATCH ===== */
+
+/* App.jsx uses .app instead of #app */
+.app {
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+  padding: 14px;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Sidebar fix */
+.sidebar {
+  width: var(--sidebar-w);
+}
+
+/* Main container fix */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Topbar fix */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Chat wrapper fix */
+.chat-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Messages container (React uses .messages not #messages) */
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Welcome screen fix */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Chips container fix */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* Typing animation fix */
+.message.ai {
+  display: flex;
+  gap: 10px;
+}
+
+.msg-avatar.ai {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--acc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.msg-bubble {
+  background: rgba(255,255,255,.08);
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.typing-dots span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+  background: white;
+  border-radius: 50%;
+  animation: blink 1.4s infinite;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0; }
+  40% { opacity: 1; }
+}
