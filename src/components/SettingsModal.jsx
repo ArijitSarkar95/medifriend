@@ -1,11 +1,11 @@
 import React from 'react'
 
 const MODELS = [
-  { value: 'meta-llama/llama-3.3-70b-instruct', label: 'Llama 3.3 70B — Best free model (Recommended)' },
-  { value: 'meta-llama/llama-3.1-8b-instruct', label: 'Llama 3.1 8B — Fastest free model' },
-  { value: 'mistralai/mistral-7b-instruct', label: 'Mistral 7B — Lightweight & fast' },
-  { value: 'google/gemma-2-9b-it:free', label: 'Google Gemma 2 9B — Free' },
-  { value: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1 — Strong reasoning (Free)' },
+  { value: 'meta-llama/llama-3.2-11b-vision-instruct:free', label: '🖼️ Llama 3.2 11B Vision — Images + Text (Recommended)' },
+  { value: 'meta-llama/llama-3.3-70b-instruct', label: '💬 Llama 3.3 70B — Text only (Best quality)' },
+  { value: 'meta-llama/llama-3.1-8b-instruct', label: '💬 Llama 3.1 8B — Text only (Fastest)' },
+  { value: 'mistralai/mistral-7b-instruct', label: '💬 Mistral 7B — Text only (Lightweight)' },
+  { value: 'google/gemma-2-9b-it:free', label: '💬 Google Gemma 2 9B — Text only (Free)' },
 ]
 
 const LANGS = [
@@ -50,7 +50,7 @@ export default function SettingsModal({ open, model, lang, onSave, onClose }) {
           <select className="finp" value={localModel} onChange={e => setLocalModel(e.target.value)}>
             {MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
-          <div className="fhint">All models above are free via OpenRouter. Llama 3.3 70B gives the best medical analysis.</div>
+          <div className="fhint">🖼️ models support image uploads (ECG, X-ray, reports). 💬 models are text only.</div>
         </div>
 
         <div className="fgrp">
