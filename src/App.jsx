@@ -1,128 +1,215 @@
-import React, { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Sidebar from './components/Sidebar.jsx'
 import ChatWindow from './components/ChatWindow.jsx'
 import InputArea from './components/InputArea.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
 import FeedbackModal from './components/FeedbackModal.jsx'
-import { useClaude } from './hooks/useClaude.js'
-import './App.css'
+import AdminLoginModal from './components/AdminLoginModal.jsx'
+import AdminDashboard from './components/AdminDashboard.jsx'
+import { useOpenRouter } from './hooks/useOpenRouter.js'
 
 export default function App() {
-  const [messages, setMessages] = useState([])
-  const [files, setFiles] = useState([])
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [feedbackOpen, setFeedbackOpen] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [model, setModel] = useState('openrouter/auto')
-  const [lang, setLang] = useState(() => localStorage.getItem('mf_lang') || 'auto')
-  const [toast, setToast] = useState({ msg: '', type: '', visible: false })
-  const toastTimer = useRef(null)
-
-  const { sendMessage, busy, resetHistory } = useClaude()
-
-  function showToast(msg, type = '') {
-    clearTimeout(toastTimer.current)
-    setToast({ msg, type, visible: true })
-    toastTimer.current = setTimeout(() => setToast(t => ({ ...t, visible: false })), 3200)
-  }
-
-  async function handleSend(text, attachedFiles) {
-    setMessages(prev => [...prev, { role: 'user', text, files: attachedFiles }])
-    try {
-      const reply = await sendMessage(text, attachedFiles, lang, model)
-      setMessages(prev => [...prev, { role: 'assistant', text: reply, files: [] }])
-    } catch (err) {
-      const m = err.message.includes('401')
-        ? '**Invalid API Key** — please check your API key in Settings.'
-        : `**Connection Error**: ${err.message}\n\nPlease verify your API key and try again.`
-      setMessages(prev => [...prev, { role: 'assistant', text: '⚠️ ' + m, files: [] }])
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('mf_settings')
+    return saved ? JSON.parse(saved) : {
+      apiKey: import.meta.env.VITE_OPENROUTER_API_KEY || '',
+      model: 'openrouter/auto',
+      lang: 'en',
     }
+  })
+
+  const [messages, setMessages]       = useState([])
+  const [attachments, setAttachments] = useState([])
+  const [history, setHistory]         = useState(() => JSON.parse(localStorage.getItem('mf_hist') || '[]'))
+  const [currentId, setCurrentId]     = useState(() => Date.now())
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Modal states
+  const [showSettings,   setShowSettings]   = useState(false)
+  const [showFeedback,   setShowFeedback]   = useState(false)
+  const [showAdminLogin, setShowAdminLogin] = useState(false)
+  const [showAdminDash,  setShowAdminDash]  = useState(false)
+
+  const { sendMessage, isLoading } = useOpenRouter(settings)
+
+  useEffect(() => {
+    localStorage.setItem('mf_settings', JSON.stringify(settings))
+  }, [settings])
+
+  function saveCurrentToHistory() {
+    if (!messages.length) return
+    const first = messages.find(m => m.role === 'user')
+    const label = typeof first?.content === 'string'
+      ? first.content.slice(0, 34)
+      : (first?.content?.find?.(c => c.type === 'text')?.text || 'Consultation').slice(0, 34)
+    const updated = [{ id: currentId, label, messages }, ...history.filter(h => h.id !== currentId)].slice(0, 20)
+    setHistory(updated)
+    localStorage.setItem('mf_hist', JSON.stringify(updated))
   }
 
-  function handleSuggest(text) {
-    setSidebarOpen(false)
-    handleSend(text, [])
-  }
-
-  function handleNewChat() {
+  function newChat() {
+    saveCurrentToHistory()
     setMessages([])
-    setFiles([])
-    resetHistory()
-    setSidebarOpen(false)
-    showToast('New conversation started', 'ok')
+    setAttachments([])
+    setCurrentId(Date.now())
   }
 
-  function handleSaveSettings(newModel, newLang) {
-    setModel(newModel)
-    setLang(newLang)
-    localStorage.setItem('mf_model', newModel)
-    localStorage.setItem('mf_lang', newLang)
-    setSettingsOpen(false)
-    showToast('Settings saved ✓', 'ok')
+  function loadChat(item) {
+    saveCurrentToHistory()
+    setMessages(item.messages)
+    setCurrentId(item.id)
+    setSidebarOpen(false)
+  }
+
+  async function handleSend(text) {
+    if (!text.trim() && !attachments.length) return
+    if (!settings.apiKey) { setShowSettings(true); return }
+
+    const userContent = []
+    if (text.trim()) userContent.push({ type: 'text', text })
+    attachments.forEach(a => {
+      if (a.type === 'img') userContent.push({ type: 'image_url', image_url: { url: a.data } })
+    })
+    const userMsg = {
+      role: 'user',
+      content: userContent.length === 1 && userContent[0].type === 'text' ? text : userContent,
+      attachments: [...attachments],
+    }
+    const newMessages = [...messages, userMsg]
+    setMessages(newMessages)
+    setAttachments([])
+
+    const reply = await sendMessage(newMessages, settings.lang)
+    setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+  }
+
+  function openAdminLogin() {
+    setShowSettings(false)
+    setShowAdminLogin(true)
+  }
+
+  function onAdminLoginSuccess() {
+    setShowAdminLogin(false)
+    setShowAdminDash(true)
   }
 
   return (
-    <div id="app">
-      <div id="sb-ov" className={sidebarOpen ? 'on' : ''} onClick={() => setSidebarOpen(false)} />
+    <>
+      <div className="bg" />
+      <div className="bokeh bokeh-1" />
+      <div className="bokeh bokeh-2" />
+      <div className="bokeh bokeh-3" />
 
-      <aside id="sidebar" className={sidebarOpen ? 'open' : ''}>
+      {/* Sidebar overlay for mobile */}
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      <div className="app">
         <Sidebar
-          onSuggest={handleSuggest}
-          onNewChat={handleNewChat}
-          onOpenSettings={() => setSettingsOpen(true)}
-          onOpenFeedback={() => setFeedbackOpen(true)}
+          open={sidebarOpen}
+          history={history}
+          currentId={currentId}
+          onNewChat={newChat}
+          onLoadChat={loadChat}
+          onFeedback={() => { setSidebarOpen(false); setShowFeedback(true) }}
+          onSettings={() => { setSidebarOpen(false); setShowSettings(true) }}
+          lang={settings.lang}
+          onLangChange={lang => setSettings(s => ({ ...s, lang }))}
         />
-      </aside>
 
-      <main id="main">
-        {/* Topbar */}
-        <div id="topbar">
-          <div className="topbar-left">
-            <button id="menu-btn" onClick={() => setSidebarOpen(s => !s)}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                <path d="M4 6h16M4 12h16M4 18h16"/>
-              </svg>
-            </button>
-            <div className="mobile-brand">
-              <div className="brand-icon" style={{ width: 30, height: 30, borderRadius: 9, fontSize: 14 }}>🩺</div>
-              Medifriend
+        <main className="main">
+          {/* TOP BAR */}
+          <div className="topbar">
+            <div className="tb-left">
+              <button className="ham-btn" onClick={() => setSidebarOpen(o => !o)}>
+                <i className="fa fa-bars" />
+              </button>
+              <div>
+                <div className="tb-title">🩺 MediFriend</div>
+                <div className="tb-sub">{modelLabel(settings.model)}</div>
+              </div>
             </div>
-            <div className="topbar-pill">
-              <div className="online-dot"></div>
-              AI Online
+            <div className="tb-right">
+              <select
+                className="lang-select"
+                value={settings.lang}
+                onChange={e => setSettings(s => ({ ...s, lang: e.target.value }))}
+              >
+                {LANGS.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
+              </select>
+              <button className="icon-btn" onClick={newChat}>
+                <i className="fa fa-broom" style={{ fontSize: '.72rem' }} />
+                <span>Clear chat</span>
+              </button>
+              <button className="icon-btn" onClick={() => setShowFeedback(true)}>
+                <i className="fa fa-comment-dots" style={{ fontSize: '.72rem' }} />
+                <span>Feedback</span>
+              </button>
+              <button className="icon-btn" onClick={() => setShowSettings(true)}>
+                <i className="fa fa-gear" style={{ fontSize: '.72rem' }} />
+                <span>Settings</span>
+              </button>
             </div>
-            {/* Feedback button — visible on mobile since sidebar is hidden */}
-            <button className="feedback-btn" onClick={() => setFeedbackOpen(true)}>
-              💬 Feedback
-            </button>
           </div>
-          <div className="topbar-right">
-            <button className="icon-btn" onClick={handleNewChat} title="Clear Chat">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14 }}>
-                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-              </svg>
-              Clear Chat
-            </button>
-            <button className="icon-btn" onClick={() => setSettingsOpen(true)} title="Settings">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14 }}>
-                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              Settings
-            </button>
+
+          {/* CHAT */}
+          <div className="chat-wrap">
+            <ChatWindow
+              messages={messages}
+              isLoading={isLoading}
+              onChipClick={handleSend}
+            />
+            <InputArea
+              onSend={handleSend}
+              attachments={attachments}
+              setAttachments={setAttachments}
+              lang={settings.lang}
+            />
           </div>
-        </div>
+        </main>
+      </div>
 
-        <ChatWindow messages={messages} busy={busy} onSuggest={handleSuggest} />
-
-        <InputArea onSend={handleSend} busy={busy} files={files} setFiles={setFiles} onToast={showToast} />
-      </main>
-
-      <SettingsModal open={settingsOpen} model={model} lang={lang} onSave={handleSaveSettings} onClose={() => setSettingsOpen(false)} />
-      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} onToast={showToast} />
-
-      <div id="voice-hud">🎤 Listening… speak now</div>
-      {toast.visible && <div id="toast" className={`on ${toast.type}`}>{toast.msg}</div>}
-    </div>
+      {/* MODALS */}
+      {showSettings && (
+        <SettingsModal
+          settings={settings}
+          onSave={s => { setSettings(s); setShowSettings(false) }}
+          onClose={() => setShowSettings(false)}
+          onAdminLogin={openAdminLogin}
+        />
+      )}
+      {showFeedback && (
+        <FeedbackModal onClose={() => setShowFeedback(false)} />
+      )}
+      {showAdminLogin && (
+        <AdminLoginModal
+          onSuccess={onAdminLoginSuccess}
+          onClose={() => setShowAdminLogin(false)}
+        />
+      )}
+      {showAdminDash && (
+        <AdminDashboard onClose={() => setShowAdminDash(false)} />
+      )}
+    </>
   )
+}
+
+const LANGS = [
+  ['en','🌐 English'],['hi','हिन्दी'],['bn','বাংলা'],['te','తెలుగు'],
+  ['mr','मराठी'],['ta','தமிழ்'],['gu','ગુજરાતી'],['kn','ಕನ್ನಡ'],
+  ['ml','മലയാളം'],['pa','ਪੰਜਾਬੀ'],
+]
+
+function modelLabel(model) {
+  const map = {
+    'openrouter/auto': 'Auto — Best free model',
+    'meta-llama/llama-3.3-70b-instruct:free': 'Llama 3.3 70B',
+    'google/gemma-3-27b-it:free': 'Google Gemma 3 27B',
+    'meta-llama/llama-3.2-11b-vision-instruct:free': 'Llama 3.2 Vision',
+    'deepseek/deepseek-r1:free': 'DeepSeek R1',
+    'mistralai/mistral-7b-instruct:free': 'Mistral 7B',
+  }
+  return map[model] || 'Auto — Best free model'
 }

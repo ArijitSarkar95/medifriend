@@ -1,55 +1,16 @@
-import React, { useRef, useEffect, useState } from 'react'
+import { useState, useRef } from 'react'
 
-function toB64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader()
-    r.onload = () => res(r.result.split(',')[1])
-    r.onerror = rej
-    r.readAsDataURL(file)
-  })
-}
+export default function InputArea({ onSend, attachments, setAttachments, lang }) {
+  const [text, setText] = useState('')
+  const [recording, setRecording] = useState(false)
+  const srRef = useRef(null)
+  const taRef = useRef(null)
 
-export default function InputArea({ onSend, busy, files, setFiles, onToast }) {
-  const txtRef = useRef(null)
-  const fileInputRef = useRef(null)
-  const [hearing, setHearing] = useState(false)
-  const recogRef = useRef(null)
-
-  useEffect(() => {
-    setupVoice()
-    // eslint-disable-next-line
-  }, [])
-
-  function grow(el) {
+  function autoResize() {
+    const el = taRef.current
+    if (!el) return
     el.style.height = 'auto'
-    el.style.height = Math.min(el.scrollHeight, 140) + 'px'
-  }
-
-  function setupVoice() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) return
-    const recog = new SR()
-    recog.continuous = false
-    recog.interimResults = true
-    recog.maxAlternatives = 1
-    let final = ''
-    recog.onstart = () => { setHearing(true); final = '' }
-    recog.onresult = e => {
-      let interim = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        e.results[i].isFinal ? final += e.results[i][0].transcript : interim += e.results[i][0].transcript
-      }
-      if (txtRef.current) { txtRef.current.value = final + interim; grow(txtRef.current) }
-    }
-    recog.onend = () => setHearing(false)
-    recog.onerror = ev => { setHearing(false); if (ev.error !== 'aborted') onToast('Voice error: ' + ev.error, 'err') }
-    recogRef.current = recog
-  }
-
-  function toggleVoice() {
-    if (!recogRef.current) { onToast('Voice not supported in this browser', 'err'); return }
-    if (hearing) recogRef.current.stop()
-    else { try { recogRef.current.start() } catch (e) { onToast('Could not start voice', 'err') } }
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px'
   }
 
   function handleKey(e) {
@@ -57,113 +18,86 @@ export default function InputArea({ onSend, busy, files, setFiles, onToast }) {
   }
 
   function handleSend() {
-    const txt = txtRef.current?.value.trim()
-    if (!txt && !files.length) return
-    if (busy) return
-    const msg = txt || 'Please analyze the attached medical report(s) in detail.'
-    const fSnap = [...files]
-    txtRef.current.value = ''
-    grow(txtRef.current)
-    setFiles([])
-    onSend(msg, fSnap)
+    onSend(text)
+    setText('')
+    if (taRef.current) taRef.current.style.height = 'auto'
   }
 
-  async function onFilesSelected(e) {
-    const newFiles = []
-    for (const f of Array.from(e.target.files)) {
-      if (f.size > 25 * 1024 * 1024) { onToast(f.name + ' exceeds 25MB limit', 'err'); continue }
-      const b64 = await toB64(f)
-      newFiles.push({ name: f.name, mime: f.type || 'application/octet-stream', b64, isImg: f.type.startsWith('image/'), url: URL.createObjectURL(f) })
-    }
-    setFiles(prev => [...prev, ...newFiles])
+  function handleFiles(e) {
+    Array.from(e.target.files).forEach(file => {
+      const reader = new FileReader()
+      if (file.type.startsWith('image/')) {
+        reader.onload = ev => setAttachments(a => [...a, { type: 'img', data: ev.target.result, name: file.name }])
+        reader.readAsDataURL(file)
+      } else {
+        setAttachments(a => [...a, { type: 'file', name: file.name }])
+      }
+    })
     e.target.value = ''
   }
 
-  function rmFile(i) {
-    setFiles(prev => {
-      URL.revokeObjectURL(prev[i].url)
-      return prev.filter((_, idx) => idx !== i)
-    })
+  function removeAttachment(name) {
+    setAttachments(a => a.filter(x => x.name !== name))
   }
 
-  // Paste image
-  useEffect(() => {
-    const el = txtRef.current
-    if (!el) return
-    const handler = async (e) => {
-      const imgItem = Array.from(e.clipboardData?.items || []).find(i => i.type.startsWith('image/'))
-      if (!imgItem) return
-      e.preventDefault()
-      const blob = imgItem.getAsFile()
-      const b64 = await toB64(blob)
-      setFiles(prev => [...prev, { name: `pasted-${Date.now()}.png`, mime: 'image/png', b64, isImg: true, url: URL.createObjectURL(blob) }])
-      onToast('Image pasted ✓', 'ok')
+  function toggleVoice() {
+    if (recording) {
+      srRef.current?.stop(); setRecording(false); return
     }
-    el.addEventListener('paste', handler)
-    return () => el.removeEventListener('paste', handler)
-  }, [])
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) return
+    const r = new SR()
+    r.lang = lang === 'en' ? 'en-IN' : lang
+    r.onresult = e => { setText(e.results[0][0].transcript); autoResize() }
+    r.onend = () => setRecording(false)
+    r.start(); srRef.current = r; setRecording(true)
+  }
 
   return (
-    <>
-      {files.length > 0 && (
-        <div id="file-bar" className="on">
-          {files.map((f, i) => (
-            <div key={i} className="fpi">
-              <div className="fpi-thumb">
-                {f.isImg
-                  ? <img src={f.url} alt="" style={{ width: 30, height: 30, objectFit: 'cover', borderRadius: 5 }} />
-                  : <span style={{ fontSize: 16 }}>📄</span>}
-              </div>
-              <span className="fpi-name">{f.name}</span>
-              <button className="fpi-rm" onClick={() => rmFile(i)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 11, height: 11 }}>
-                  <path d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
+    <div className="input-area">
+      {attachments.length > 0 && (
+        <div className="file-chips">
+          {attachments.map(a => (
+            <div key={a.name} className="file-chip">
+              <i className={`fa ${a.type === 'img' ? 'fa-image' : 'fa-file'}`} style={{ fontSize: '.7rem' }} />
+              {a.name.length > 20 ? a.name.slice(0, 20) + '…' : a.name}
+              <span className="file-chip-remove" onClick={() => removeAttachment(a.name)}>✕</span>
             </div>
           ))}
         </div>
       )}
 
-      <div id="input-area">
-        <div className="input-wrap">
-          <textarea
-            ref={txtRef}
-            id="txt"
-            rows={1}
-            placeholder="Describe symptoms, ask about hospitals, or share health concerns... (attach reports with 📎)"
-            onKeyDown={handleKey}
-            onInput={e => grow(e.target)}
-          />
-          <div className="ibtns">
-            <button className="ibtn" onClick={() => fileInputRef.current?.click()} title="Attach medical reports">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}>
-                <path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-              </svg>
-            </button>
-            <button
-              className={`ibtn${hearing ? ' voice-on' : ''}`}
-              id="voiceBtn"
-              onClick={toggleVoice}
-              title="Voice input"
-              style={!recogRef.current ? { display: 'none' } : {}}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}>
-                <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
-                <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
-              </svg>
-            </button>
-            <button className="ibtn send-btn" onClick={handleSend} disabled={busy} title="Send">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 18, height: 18 }}>
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-              </svg>
-            </button>
-          </div>
+      <div className="input-row">
+        <div className="input-actions">
+          <label className="input-icon-btn" title="Attach file">
+            <i className="fa fa-paperclip" />
+            <input type="file" accept="image/*,.pdf,.txt" multiple onChange={handleFiles} style={{ display: 'none' }} />
+          </label>
+          <button
+            className={`input-icon-btn ${recording ? 'recording' : ''}`}
+            title="Voice input"
+            onClick={toggleVoice}
+          >
+            <i className="fa fa-microphone" />
+          </button>
         </div>
-        <div className="input-caption">📎 Images & PDFs • 🎤 Voice input • 🇮🇳 Multi-language • 🏥 India hospital guidance</div>
+
+        <textarea
+          ref={taRef}
+          className="chat-input"
+          rows={1}
+          value={text}
+          placeholder="Describe your symptoms or ask a health question…"
+          onChange={e => { setText(e.target.value); autoResize() }}
+          onKeyDown={handleKey}
+        />
+
+        <button className="send-btn" onClick={handleSend} disabled={!text.trim() && !attachments.length}>
+          <i className="fa fa-paper-plane" />
+        </button>
       </div>
 
-      <input ref={fileInputRef} type="file" accept="image/*,.pdf" multiple onChange={onFilesSelected} style={{ display: 'none' }} />
-    </>
+      <div className="disclaimer">⚕️ Not a substitute for professional medical advice.</div>
+    </div>
   )
 }

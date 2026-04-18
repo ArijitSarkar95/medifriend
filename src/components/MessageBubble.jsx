@@ -1,39 +1,33 @@
-import React from 'react'
-import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 
-marked.setOptions({ breaks: true, gfm: true })
-
-function esc(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-}
-
-export default function MessageBubble({ role, text, attachedFiles = [] }) {
-  const isUser = role === 'user'
-  const avatar = isUser ? '👤' : '🩺'
-
-  const bubbleContent = isUser
-    ? <span dangerouslySetInnerHTML={{ __html: esc(text).replace(/\n/g, '<br>') }} />
-    : <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(text)) }} />
+export default function MessageBubble({ message }) {
+  const isUser = message.role === 'user'
+  const text = typeof message.content === 'string'
+    ? message.content
+    : message.content?.find?.(c => c.type === 'text')?.text || ''
+  const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div className={`msg ${role}`}>
-      <div className="msg-av">{avatar}</div>
-      <div className="msg-body">
-        <div className="msg-who">{isUser ? 'You' : 'Medifriend'}</div>
-        {attachedFiles.length > 0 && (
-          <div className="msg-files">
-            {attachedFiles.map((f, i) => (
-              <div key={i} className="file-tag">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 11, height: 11 }}>
-                  <path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                </svg>
-                {f.name}
-              </div>
-            ))}
+    <div className={`message ${isUser ? 'user' : 'ai'}`}>
+      <div className={`msg-avatar ${isUser ? 'user' : 'ai'}`}>
+        {isUser ? '👤' : '🩺'}
+      </div>
+      <div className="msg-bubble">
+        {/* Image attachments */}
+        {message.attachments?.filter(a => a.type === 'img').map((a, i) => (
+          <img key={i} src={a.data} alt="attachment" />
+        ))}
+        {/* File attachments */}
+        {message.attachments?.filter(a => a.type === 'file').map((a, i) => (
+          <div key={i} className="file-chip" style={{ marginBottom: 6 }}>
+            <i className="fa fa-file" style={{ fontSize: '.7rem' }} /> {a.name}
           </div>
+        ))}
+        {/* Message text */}
+        {text && (
+          <div dangerouslySetInnerHTML={{ __html: marked.parse(text) }} />
         )}
-        <div className="bubble">{bubbleContent}</div>
+        <div className="msg-time">{time}</div>
       </div>
     </div>
   )

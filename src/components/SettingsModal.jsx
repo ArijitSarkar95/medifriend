@@ -1,67 +1,63 @@
-import React from 'react'
+import { useState } from 'react'
 
 const MODELS = [
-  { value: 'openrouter/auto', label: '🤖 Auto — Always picks best available free model (Recommended)' },
-  { value: 'google/gemma-3-27b-it:free', label: '🖼️ Google Gemma 3 27B — Images + Text (Free)' },
-  { value: 'meta-llama/llama-3.3-70b-instruct:free', label: '💬 Llama 3.3 70B — Text only (Free)' },
-  { value: 'meta-llama/llama-3.1-8b-instruct:free', label: '💬 Llama 3.1 8B — Text only, Fastest (Free)' },
+  ['openrouter/auto',                                   '🤖 Auto — OpenRouter picks best free model'],
+  ['meta-llama/llama-3.3-70b-instruct:free',            '💬 Llama 3.3 70B — Best quality (Free)'],
+  ['google/gemma-3-27b-it:free',                        '🧠 Google Gemma 3 27B — Fast & free'],
+  ['meta-llama/llama-3.2-11b-vision-instruct:free',     '🖼️ Llama 3.2 Vision — Images + Text'],
+  ['deepseek/deepseek-r1:free',                         '🔬 DeepSeek R1 — Strong reasoning'],
+  ['mistralai/mistral-7b-instruct:free',                '⚡ Mistral 7B — Lightweight'],
 ]
 
-const LANGS = [
-  { value: 'auto', label: 'Auto-detect from your message (Recommended)' },
-  { value: 'English', label: 'English' },
-  { value: 'Hindi', label: 'Hindi (हिंदी)' },
-  { value: 'Bengali', label: 'Bengali (বাংলা)' },
-  { value: 'Tamil', label: 'Tamil (தமிழ்)' },
-  { value: 'Telugu', label: 'Telugu (తెలుగు)' },
-  { value: 'Kannada', label: 'Kannada (ಕನ್ನಡ)' },
-  { value: 'Malayalam', label: 'Malayalam (മലയാളം)' },
-  { value: 'Marathi', label: 'Marathi (मराठी)' },
-  { value: 'Gujarati', label: 'Gujarati (ગુજરાતી)' },
-  { value: 'Punjabi', label: 'Punjabi (ਪੰਜਾਬੀ)' },
-]
-
-export default function SettingsModal({ open, model, lang, onSave, onClose }) {
-  const [localModel, setLocalModel] = React.useState(model)
-  const [localLang, setLocalLang] = React.useState(lang)
-
-  React.useEffect(() => {
-    setLocalModel(model)
-    setLocalLang(lang)
-  }, [open, model, lang])
-
-  if (!open) return null
+export default function SettingsModal({ settings, onSave, onClose, onAdminLogin }) {
+  const [apiKey, setApiKey] = useState(settings.apiKey)
+  const [model,  setModel]  = useState(settings.model || 'openrouter/auto')
 
   return (
-    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="modal">
-        <div className="mhd">
-          <div className="mtitle">⚙️ Medifriend Settings</div>
-          <button className="mclose" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
-              <path d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box">
+        <div className="modal-header">
+          <div className="modal-title">
+            <div className="modal-icon" style={{ background: 'linear-gradient(140deg,#9b6dff,#e879b8)' }}>⚙️</div>
+            Settings
+          </div>
+          <button className="modal-close" onClick={onClose}><i className="fa fa-times" /></button>
+        </div>
+
+        <div className="modal-body">
+          <div className="form-group">
+            <label className="form-label">OpenRouter API Key</label>
+            <input
+              className="glass-input"
+              type="password"
+              value={apiKey}
+              placeholder="sk-or-v1-xxxxxxxxxxxxxxxx"
+              onChange={e => setApiKey(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">AI Model</label>
+            <select className="glass-input" value={model} onChange={e => setModel(e.target.value)}>
+              {MODELS.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
+            </select>
+          </div>
+
+          <div className="modal-divider" />
+
+          {/* Admin Panel entry */}
+          <div className="settings-menu-item" onClick={onAdminLogin}>
+            <i className="fa fa-shield-halved" />
+            <span>Admin Panel</span>
+            <i className="fa fa-chevron-right" style={{ marginLeft: 'auto', fontSize: '.7rem', color: 'var(--t3)' }} />
+          </div>
+        </div>
+
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={() => onSave({ ...settings, apiKey, model })}>
+            Save Settings
           </button>
-        </div>
-
-        <div className="fgrp">
-          <label className="flbl">AI Model</label>
-          <select className="finp" value={localModel} onChange={e => setLocalModel(e.target.value)}>
-            {MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-          </select>
-          <div className="fhint">Auto mode always works — OpenRouter picks the best free model automatically for each request including image support.</div>
-        </div>
-
-        <div className="fgrp">
-          <label className="flbl">Preferred Response Language</label>
-          <select className="finp" value={localLang} onChange={e => setLocalLang(e.target.value)}>
-            {LANGS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-          </select>
-        </div>
-
-        <div className="mfooter">
-          <button className="btn-sec" onClick={onClose}>Cancel</button>
-          <button className="btn-pri" onClick={() => onSave(localModel, localLang)}>Save Settings</button>
         </div>
       </div>
     </div>

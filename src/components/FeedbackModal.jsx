@@ -1,108 +1,153 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
-const RATINGS = [
-  { emoji: '😞', label: 'Poor' },
-  { emoji: '😐', label: 'Okay' },
-  { emoji: '🙂', label: 'Good' },
-  { emoji: '😊', label: 'Great' },
-  { emoji: '🤩', label: 'Excellent' },
-]
+export default function FeedbackModal({ onClose }) {
+  const [name,    setName]    = useState('')
+  const [age,     setAge]     = useState('')
+  const [rating,  setRating]  = useState('')
+  const [desc,    setDesc]    = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [errors,  setErrors]  = useState({})
 
-export default function FeedbackModal({ open, onClose, onToast }) {
-  const [name, setName] = useState('')
-  const [age, setAge] = useState('')
-  const [rating, setRating] = useState(null)
-  const [description, setDescription] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-
-  if (!open) return null
-
-  function handleSubmit() {
-    if (!name.trim()) { onToast('Please enter your name', 'err'); return }
-    if (!age || isNaN(age) || age < 1 || age > 120) { onToast('Please enter a valid age', 'err'); return }
-    if (!description.trim()) { onToast('Please write your feedback', 'err'); return }
-    // Save to localStorage
-    const fb = JSON.parse(localStorage.getItem('mf_fb') || '[]')
-    fb.push({ name, age, rating: rating !== null ? RATINGS[rating].label : 'N/A', description, ts: new Date().toISOString() })
-    localStorage.setItem('mf_fb', JSON.stringify(fb))
-    setSubmitted(true)
+  function validate() {
+    const e = {}
+    if (!name.trim()) e.name = true
+    if (!age.trim())  e.age  = true
+    if (!desc.trim()) e.desc = true
+    setErrors(e)
+    return !Object.keys(e).length
   }
 
-  function handleClose() {
-    setName(''); setAge(''); setRating(null); setDescription(''); setSubmitted(false)
+  async function handleSubmit() {
+    if (!validate()) return
+    setSubmitting(true)
+
+    // Collect device info
+    const device = getDeviceInfo()
+
+    // Get location from IP (free, no key)
+    let location = { city: 'Unknown', region: 'Unknown', country: 'Unknown', ip: 'Unknown', lat: '', lon: '' }
+    try {
+      const r = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) })
+      if (r.ok) {
+        const g = await r.json()
+        location = { city: g.city || 'Unknown', region: g.region || 'Unknown', country: g.country_name || 'Unknown', ip: g.ip || 'Unknown', lat: g.latitude || '', lon: g.longitude || '' }
+      }
+    } catch (_) { /* silently fail */ }
+
+    const fb = JSON.parse(localStorage.getItem('mf_fb') || '[]')
+    fb.push({ id: Date.now(), name, age, rating: rating || 'Not rated', feedback: desc, device, location, ts: new Date().toISOString() })
+    localStorage.setItem('mf_fb', JSON.stringify(fb))
+
+    setSubmitting(false)
     onClose()
+    showGlobalToast('🎉 Thanks for your feedback, ' + name + '!')
   }
 
   return (
-    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) handleClose() }}>
-      <div className="modal">
-        <div className="mhd">
-          <div className="mtitle">💬 Share Your Feedback</div>
-          <button className="mclose" onClick={handleClose}>✕</button>
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box">
+        <div className="modal-header">
+          <div className="modal-title">
+            <div className="modal-icon" style={{ background: 'linear-gradient(140deg,#e879b8,#ffd27a)' }}>💬</div>
+            Share Your Feedback
+          </div>
+          <button className="modal-close" onClick={onClose}><i className="fa fa-times" /></button>
         </div>
 
-        {submitted ? (
-          <div style={{ textAlign: 'center', padding: '32px 24px' }}>
-            <div style={{ fontSize: '3.5rem', marginBottom: 14 }}>🎉</div>
-            <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.2rem', fontWeight: 700, color: 'rgba(255,255,255,.96)', marginBottom: 10 }}>
-              Thank you, {name}!
-            </div>
-            <div style={{ fontSize: '.87rem', color: 'rgba(255,255,255,.62)', lineHeight: 1.65, maxWidth: 320, margin: '0 auto 24px' }}>
-              Your feedback helps us improve Medifriend for everyone. We truly appreciate you taking the time! 🙏
-            </div>
-            <button className="btn-pri" onClick={handleClose}>Close</button>
-          </div>
-        ) : (
-          <>
-            <div style={{ padding: '14px 24px 0', fontSize: '.82rem', color: 'rgba(255,255,255,.55)', lineHeight: 1.55 }}>
-              Help us improve Medifriend — takes less than a minute! 🚀
-            </div>
-
-            {/* Name & Age side by side */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, padding: '16px 24px 0' }}>
-              <div>
-                <label className="flbl">Name <span style={{ color: '#ff6b6b' }}>*</span></label>
-                <input className="finp" type="text" placeholder="e.g. Arijit" value={name} onChange={e => setName(e.target.value)} />
-              </div>
-              <div>
-                <label className="flbl">Age <span style={{ color: '#ff6b6b' }}>*</span></label>
-                <input className="finp" type="number" placeholder="e.g. 21" min="1" max="120" value={age} onChange={e => setAge(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="fgrp" style={{ paddingTop: 14 }}>
-              <label className="flbl">Overall Experience</label>
-              <div className="rating-grid">
-                {RATINGS.map((r, i) => (
-                  <button
-                    key={i}
-                    className={`rating-btn${rating === i ? ' selected' : ''}`}
-                    onClick={() => setRating(i)}
-                  >
-                    {r.emoji} {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="fgrp">
-              <label className="flbl">Your Feedback <span style={{ color: '#ff6b6b' }}>*</span></label>
-              <textarea
-                className="finp"
-                placeholder="Tell us what you liked, what could be improved, or any issues you faced..."
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                rows={4}
+        <div className="modal-body">
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Your Name</label>
+              <input
+                className="glass-input"
+                type="text"
+                value={name}
+                placeholder="e.g. Arijit Sarkar"
+                onChange={e => setName(e.target.value)}
+                style={errors.name ? { borderColor: 'rgba(255,80,80,.7)', animation: 'shake .4s ease' } : {}}
               />
             </div>
-
-            <div className="mfooter">
-              <button className="btn-sec" onClick={handleClose}>Cancel</button>
-              <button className="btn-pri" onClick={handleSubmit}>Submit 🚀</button>
+            <div className="form-group">
+              <label className="form-label">Age</label>
+              <input
+                className="glass-input"
+                type="number"
+                value={age}
+                placeholder="e.g. 22"
+                min="1" max="120"
+                onChange={e => setAge(e.target.value)}
+                style={errors.age ? { borderColor: 'rgba(255,80,80,.7)', animation: 'shake .4s ease' } : {}}
+              />
             </div>
-          </>
-        )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Rating</label>
+            <div className="rating-grid">
+              {[['5','⭐⭐⭐⭐⭐ Excellent'],['4','⭐⭐⭐⭐ Good'],['3','⭐⭐⭐ Average'],['2','⭐⭐ Needs work']].map(([v,l]) => (
+                <label key={v} className="rating-label">
+                  <input type="radio" name="rating" value={v} checked={rating===v} onChange={() => setRating(v)} />
+                  {l}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Your Feedback</label>
+            <textarea
+              className="glass-input"
+              value={desc}
+              placeholder="Tell us what you loved, what could be better, or any suggestions…"
+              onChange={e => setDesc(e.target.value)}
+              style={errors.desc ? { borderColor: 'rgba(255,80,80,.7)', animation: 'shake .4s ease' } : {}}
+            />
+          </div>
+
+          <div style={{ fontSize: '.68rem', color: 'var(--t3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <i className="fa fa-lock" style={{ fontSize: '.65rem' }} />
+            Device info & approximate location are collected anonymously to improve MediFriend.
+          </div>
+        </div>
+
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={handleSubmit} disabled={submitting}>
+            {submitting
+              ? <><i className="fa fa-spinner fa-spin" style={{ marginRight: 6 }} />Submitting…</>
+              : <><i className="fa fa-paper-plane" style={{ marginRight: 6, fontSize: '.75rem' }} />Submit Feedback</>
+            }
+          </button>
+        </div>
       </div>
     </div>
   )
+}
+
+function getDeviceInfo() {
+  const ua = navigator.userAgent
+  let device = 'Unknown', os = 'Unknown', browser = 'Unknown'
+  if (/iPhone/.test(ua)) device = 'iPhone'
+  else if (/iPad/.test(ua)) device = 'iPad'
+  else if (/Android.*Mobile/.test(ua)) device = 'Android Phone'
+  else if (/Android/.test(ua)) device = 'Android Tablet'
+  else device = 'Desktop/Laptop'
+  if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS'
+  else if (/Android/.test(ua)) { const m = ua.match(/Android\s([\d.]+)/); os = 'Android' + (m ? ' ' + m[1] : '') }
+  else if (/Windows NT/.test(ua)) { const m = ua.match(/Windows NT ([\d.]+)/); os = 'Windows' + (m ? ' ' + m[1] : '') }
+  else if (/Mac OS X/.test(ua)) os = 'macOS'
+  else if (/Linux/.test(ua)) os = 'Linux'
+  if (/Chrome/.test(ua) && !/Edg/.test(ua)) browser = 'Chrome'
+  else if (/Edg/.test(ua)) browser = 'Edge'
+  else if (/Firefox/.test(ua)) browser = 'Firefox'
+  else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari'
+  else if (/OPR|Opera/.test(ua)) browser = 'Opera'
+  return { device, os, browser, screen: `${window.screen.width}×${window.screen.height}`, userAgent: ua.slice(0, 120) }
+}
+
+function showGlobalToast(msg) {
+  let t = document.getElementById('global-toast')
+  if (!t) { t = document.createElement('div'); t.id = 'global-toast'; t.className = 'toast'; document.body.appendChild(t) }
+  t.textContent = msg; t.classList.add('visible')
+  setTimeout(() => t.classList.remove('visible'), 3200)
 }
