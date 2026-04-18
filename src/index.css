@@ -1,38 +1,86 @@
+/* ═══════════════════════════════════════════
+   iOS 26 AUTHENTIC LIQUID GLASS SYSTEM
+   ═══════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-base: #060d1a;
-  --bg-surface: #0b1526;
-  --bg-elevated: #101f34;
-  --bg-hover: rgba(20,184,166,0.07);
-  --border: rgba(255,255,255,0.07);
-  --border-accent: rgba(20,184,166,0.35);
-  --accent: #14b8a6;
-  --accent-bright: #2dd4bf;
-  --accent-dim: rgba(20,184,166,0.12);
-  --accent-glow: rgba(20,184,166,0.18);
-  --coral: #fb7185;
+  --a1:#0d1b5e; --a2:#1e1060; --a3:#5c1e82; --a4:#9e2d8a; --a5:#d4547f; --a6:#f4a0b8; --a7:#fde8b8;
+  --gf:   rgba(255,255,255,0.09);
+  --gfh:  rgba(255,255,255,0.15);
+  --gfp:  rgba(255,255,255,0.05);
+  --gb:   rgba(255,255,255,0.18);
+  --gbh:  rgba(255,255,255,0.38);
+  --gs:   inset 0 1.5px 0 rgba(255,255,255,0.65), inset 1px 0 0 rgba(255,255,255,0.16), inset -1px 0 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(255,255,255,0.04);
+  --gd:   0 2px 6px rgba(0,0,0,0.06), 0 10px 28px rgba(0,0,0,0.14), 0 24px 60px rgba(0,0,0,0.22);
+  --blur: blur(54px) saturate(200%) brightness(1.06);
+  --cf:   rgba(6,8,32,0.82);
+  --acc:  linear-gradient(140deg,#9b6dff,#e879b8);
+  --t1:   rgba(255,255,255,0.96);
+  --t2:   rgba(255,255,255,0.62);
+  --t3:   rgba(255,255,255,0.32);
+  --rp:   9999px;
+  --rx:   26px;
+  --rl:   18px;
+  --rm:   13px;
+  --rs:   9px;
+
+  /* Keep old vars for compatibility */
+  --bg-base: #090d30;
+  --bg-surface: rgba(255,255,255,0.07);
+  --bg-elevated: rgba(255,255,255,0.05);
+  --bg-hover: rgba(255,255,255,0.09);
+  --border: rgba(255,255,255,0.17);
+  --border-accent: rgba(155,109,255,0.62);
+  --accent: #9b6dff;
+  --accent-bright: #e879b8;
+  --accent-dim: rgba(155,109,255,0.15);
+  --accent-glow: rgba(155,109,255,0.18);
+  --coral: #ff6b6b;
   --amber: #fbbf24;
   --sky: #38bdf8;
-  --text-primary: #e2eaf7;
-  --text-secondary: #94a3b8;
-  --text-muted: #3d5270;
-  --sidebar-w: 285px;
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  --text-primary: rgba(255,255,255,0.96);
+  --text-secondary: rgba(255,255,255,0.62);
+  --text-muted: rgba(255,255,255,0.32);
+  --sidebar-w: 280px;
+  --radius-sm: 9px;
+  --radius-md: 13px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
   --shadow-card: 0 8px 32px rgba(0,0,0,0.5);
 }
 
 html, body, #root {
   height: 100%;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  background: var(--bg-base);
-  color: var(--text-primary);
+  font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, 'SF Pro Text', sans-serif;
+  background: #090d30;
+  color: var(--t1);
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── AURORA BACKGROUND ── */
+#root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 10%, rgba(50,30,160,.90) 0%,transparent 65%),
+    radial-gradient(ellipse 70% 55% at 85% 20%, rgba(160,40,130,.70) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 70% at 50% 80%, rgba(255,190,220,.55) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 50% at 75% 75%, rgba(255,230,140,.45) 0%,transparent 55%),
+    radial-gradient(ellipse 90% 90% at 10% 90%, rgba(30,16,90,.95) 0%,transparent 70%),
+    linear-gradient(140deg,#0d1040 0%,#1a0a50 30%,#3d1060 55%,#0d1040 100%);
+  animation: aur 16s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes aur {
+  0%   { filter: hue-rotate(0deg) brightness(1.00); }
+  50%  { filter: hue-rotate(14deg) brightness(1.06); }
+  100% { filter: hue-rotate(-6deg) brightness(0.97); }
 }
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1e3a52; border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); border-radius: 2px; }

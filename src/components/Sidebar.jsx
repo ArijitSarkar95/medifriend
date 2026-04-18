@@ -1,11 +1,5 @@
 import React from 'react'
 
-const HeartIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" width="24" height="24">
-    <path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z" fill="white"/>
-  </svg>
-)
-
 const navItems = [
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>,
@@ -39,12 +33,12 @@ const navItems = [
   },
 ]
 
-export default function Sidebar({ onSuggest, onNewChat, onOpenSettings }) {
+export default function Sidebar({ onSuggest, onNewChat, onOpenSettings, onOpenFeedback }) {
   return (
     <aside id="sidebar">
       <div className="sidebar-top">
         <div className="brand">
-          <div className="brand-icon"><HeartIcon /></div>
+          <div className="brand-icon">🩺</div>
           <div>
             <div className="brand-name">Medifriend</div>
             <div className="brand-tag">AI Medical Advisor</div>
@@ -54,7 +48,7 @@ export default function Sidebar({ onSuggest, onNewChat, onOpenSettings }) {
 
       <div className="sidebar-body">
         <button className="btn-new" onClick={onNewChat}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M12 5v14M5 12h14"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>
           New Conversation
         </button>
 
@@ -71,8 +65,20 @@ export default function Sidebar({ onSuggest, onNewChat, onOpenSettings }) {
       <div className="sidebar-footer">
         <div className="disclaimer-box">
           <strong>⚠️ Medical Disclaimer</strong>
-          Medifriend provides informational guidance only. Always consult a qualified doctor for diagnosis and treatment. For emergencies call <strong>112</strong>.
+          Medifriend provides informational guidance only. Always consult a qualified doctor. For emergencies call <strong>112</strong>.
         </div>
+
+        {/* AI Online + Feedback side by side */}
+        <div className="status-row">
+          <div className="status-pill">
+            <div className="online-dot"></div>
+            <span className="status-text">AI Online</span>
+          </div>
+          <button className="feedback-pill" onClick={onOpenFeedback}>
+            💬 Feedback
+          </button>
+        </div>
+
         <button className="btn-settings-footer" onClick={onOpenSettings}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
           Settings

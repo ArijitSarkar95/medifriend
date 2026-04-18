@@ -1,9 +1,8 @@
 import React from 'react'
 
 const MODELS = [
-  { value: 'google/gemma-4-31b-it:free', label: '🖼️ Google Gemma 4 31B — Images + Text (Best Free)' },
-  { value: 'google/gemma-4-26b-a4b:free', label: '🖼️ Google Gemma 4 26B — Images + Text (Fast Free)' },
-  { value: 'openrouter/auto', label: '🤖 Auto — OpenRouter picks best free model' },
+  { value: 'openrouter/auto', label: '🤖 Auto — Always picks best available free model (Recommended)' },
+  { value: 'google/gemma-3-27b-it:free', label: '🖼️ Google Gemma 3 27B — Images + Text (Free)' },
   { value: 'meta-llama/llama-3.3-70b-instruct:free', label: '💬 Llama 3.3 70B — Text only (Free)' },
   { value: 'meta-llama/llama-3.1-8b-instruct:free', label: '💬 Llama 3.1 8B — Text only, Fastest (Free)' },
 ]
@@ -50,7 +49,7 @@ export default function SettingsModal({ open, model, lang, onSave, onClose }) {
           <select className="finp" value={localModel} onChange={e => setLocalModel(e.target.value)}>
             {MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
-          <div className="fhint">🖼️ models support image uploads (ECG, X-ray, reports). 💬 models are text only. 🤖 Auto always picks a working free model.</div>
+          <div className="fhint">Auto mode always works — OpenRouter picks the best free model automatically for each request including image support.</div>
         </div>
 
         <div className="fgrp">
