@@ -11,7 +11,7 @@ export default function App() {
   const [files, setFiles] = useState([])
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [model, setModel] = useState(() => localStorage.getItem('mf_model') || 'meta-llama/llama-3.2-11b-vision-instruct:free')
+  const [model, setModel] = useState(() => localStorage.getItem('mf_model') || 'google/gemma-4-31b-it:free')
   const [lang, setLang] = useState(() => localStorage.getItem('mf_lang') || 'auto')
   const [toast, setToast] = useState({ msg: '', type: '', visible: false })
   const toastTimer = useRef(null)
