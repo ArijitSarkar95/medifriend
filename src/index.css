@@ -588,8 +588,13 @@ select.glass-input option { background: #1e1248; color: white; }
 
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)} 40%,80%{transform:translateX(7px)} }
 
-/* Mobile overlay for sidebar — NO blur, just dim */
-.sidebar-overlay { display: none; position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,.55); }
+/* Mobile overlay — sits BEHIND sidebar (z-index lower than sidebar 900) */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  z-index: 850;
+  background: rgba(0,0,0,.55);
+}
 .sidebar-overlay.visible { display: block; }
 
 /* ══════════════════════════════════════════════════
@@ -601,41 +606,66 @@ select.glass-input option { background: #1e1248; color: white; }
   .app { padding: 0; gap: 0; height: 100dvh; }
   .main { gap: 0; border-radius: 0; }
 
-  /* ── Sidebar: slide-in drawer ── */
+  /* ── Performance: reduce heavy blur on mobile GPU ── */
+  .lq,
+  .topbar,
+  .chat-wrap,
+  .sidebar,
+  .modal-box {
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
+  /* Aurora animation: pause on mobile to save CPU */
+  .bg { animation: none; }
+  .bokeh-1, .bokeh-2, .bokeh-3 { animation: none; display: none; }
+
+  /* ── Sidebar: must be above overlay ── */
   .sidebar {
-    position: fixed; left: 0; top: 0; bottom: 0; z-index: 900;
+    position: fixed; left: 0; top: 0; bottom: 0;
+    z-index: 900;              /* always above overlay's 850 */
     width: 80vw; max-width: 280px;
     border-radius: 0 20px 20px 0;
     transform: translateX(-100%);
+    pointer-events: auto;      /* ensure clicks work */
   }
   .sidebar.open { transform: translateX(0); box-shadow: 6px 0 30px rgba(0,0,0,.5); }
 
   /* ── Topbar ── */
   .topbar {
     border-radius: 0;
-    padding: 8px 12px;
+    padding: 8px 10px;
     padding-top: max(8px, env(safe-area-inset-top, 8px));
     min-height: calc(50px + env(safe-area-inset-top, 0px));
-    gap: 6px;
+    gap: 4px;
   }
-  .ham-btn { display: flex; }
-  /* Constrain the left side so title never pushes into right buttons */
+  .ham-btn { display: flex; flex-shrink: 0; }
   .tb-left {
     flex: 1;
     min-width: 0;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
+  /* Show ONLY the icon emoji, hide the text title on mobile */
   .tb-title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 120px;   /* hard cap so it never bleeds into right buttons */
+    display: none;
   }
-  .lang-select { max-width: 85px; font-size: .68rem; padding: 6px 8px; }
-  /* Icon buttons: icon only, no text */
-  .icon-btn span { display: none; }
-  .icon-btn { padding: 7px 9px; }
+  /* Show a compact brand pill instead */
+  .tb-left::after {
+    content: '🩺 MediFriend';
+    font-weight: 700;
+    font-size: .88rem;
+    color: rgba(255,255,255,.96);
+    white-space: nowrap;
+    letter-spacing: -.01em;
+  }
   .tb-sub { display: none; }
+  /* Language select: compact */
+  .lang-select { max-width: 80px; font-size: .66rem; padding: 5px 7px; }
+  /* Icon buttons: icon only */
+  .icon-btn span { display: none; }
+  .icon-btn { padding: 7px 8px; min-width: 32px; justify-content: center; }
 
   /* ── Chat wrap ── */
   .chat-wrap { border-radius: 0; }
