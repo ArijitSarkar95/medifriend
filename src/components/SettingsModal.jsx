@@ -10,8 +10,7 @@ const MODELS = [
 ]
 
 export default function SettingsModal({ settings, onSave, onClose, onAdminLogin }) {
-  const [apiKey, setApiKey] = useState(settings.apiKey)
-  const [model,  setModel]  = useState(settings.model || 'openrouter/auto')
+  const [model, setModel] = useState(settings.model || 'openrouter/auto')
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -26,26 +25,17 @@ export default function SettingsModal({ settings, onSave, onClose, onAdminLogin 
 
         <div className="modal-body">
           <div className="form-group">
-            <label className="form-label">OpenRouter API Key</label>
-            <input
-              className="glass-input"
-              type="password"
-              value={apiKey}
-              placeholder="sk-or-v1-xxxxxxxxxxxxxxxx"
-              onChange={e => setApiKey(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
             <label className="form-label">AI Model</label>
             <select className="glass-input" value={model} onChange={e => setModel(e.target.value)}>
               {MODELS.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
             </select>
+            <div style={{ fontSize: '.72rem', color: 'var(--t3)', marginTop: 5, lineHeight: 1.45 }}>
+              Auto mode always works — picks the best available free model for each request.
+            </div>
           </div>
 
           <div className="modal-divider" />
 
-          {/* Admin Panel entry */}
           <div className="settings-menu-item" onClick={onAdminLogin}>
             <i className="fa fa-shield-halved" />
             <span>Admin Panel</span>
@@ -55,7 +45,7 @@ export default function SettingsModal({ settings, onSave, onClose, onAdminLogin 
 
         <div className="modal-footer">
           <button className="btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn-primary" onClick={() => onSave({ ...settings, apiKey, model })}>
+          <button className="btn-primary" onClick={() => onSave({ ...settings, model })}>
             Save Settings
           </button>
         </div>

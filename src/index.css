@@ -188,6 +188,9 @@ body {
 }
 .settings-row:hover { background: rgba(255,255,255,.12); color: var(--t1); }
 
+/* Language selector inside sidebar (mobile only — hidden on desktop) */
+.sb-lang-mobile { display: none; }
+
 /* ── MAIN ── */
 .main { flex: 1; display: flex; flex-direction: column; gap: 11px; min-width: 0; overflow: hidden; }
 
@@ -619,16 +622,29 @@ select.glass-input option { background: #1e1248; color: white; }
   .bg { animation: none; }
   .bokeh-1, .bokeh-2, .bokeh-3 { animation: none; display: none; }
 
-  /* ── Sidebar: must be above overlay ── */
+  /* ── Sidebar: must be above overlay, fully bright & interactive ── */
   .sidebar {
     position: fixed; left: 0; top: 0; bottom: 0;
-    z-index: 900;              /* always above overlay's 850 */
-    width: 80vw; max-width: 280px;
+    z-index: 900;
+    width: 80vw; max-width: 300px;
     border-radius: 0 20px 20px 0;
     transform: translateX(-100%);
-    pointer-events: auto;      /* ensure clicks work */
+    pointer-events: none;         /* hidden = no interaction */
+    /* Brighter solid background so it's clearly visible */
+    background: rgba(22, 14, 60, 0.97) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border-right: 1px solid rgba(155,109,255,.35) !important;
   }
-  .sidebar.open { transform: translateX(0); box-shadow: 6px 0 30px rgba(0,0,0,.5); }
+  .sidebar.open {
+    transform: translateX(0);
+    pointer-events: auto;         /* open = fully interactive */
+    box-shadow: 8px 0 40px rgba(0,0,0,.7);
+  }
+  /* Make sure every child in sidebar is clickable */
+  .sidebar.open * {
+    pointer-events: auto;
+  }
 
   /* ── Topbar ── */
   .topbar {
@@ -661,8 +677,10 @@ select.glass-input option { background: #1e1248; color: white; }
     letter-spacing: -.01em;
   }
   .tb-sub { display: none; }
-  /* Language select: compact */
-  .lang-select { max-width: 80px; font-size: .66rem; padding: 5px 7px; }
+  /* Show language selector inside sidebar on mobile */
+  .sb-lang-mobile { display: block; }
+  /* Hide lang from topbar on mobile since it's now in sidebar */
+  .lang-select { display: none; }
   /* Icon buttons: icon only */
   .icon-btn span { display: none; }
   .icon-btn { padding: 7px 8px; min-width: 32px; justify-content: center; }

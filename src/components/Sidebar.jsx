@@ -1,6 +1,6 @@
 const LANGS = [
   ['en','🌐 English'],['hi','हिन्दी'],['bn','বাংলা'],['te','తెలుగు'],
-  ['mr','मराठी'],['ta','தமிழ்'],['gu','ગુજரાதী'],['kn','ಕನ್ನಡ'],
+  ['mr','मराठी'],['ta','தமிழ்'],['gu','ગુજરાતી'],['kn','ಕನ್ನಡ'],
   ['ml','മലയാളം'],['pa','ਪੰਜਾਬੀ'],
 ]
 
@@ -40,7 +40,6 @@ export default function Sidebar({ open, history, currentId, onNewChat, onLoadCha
       </div>
 
       <div className="sb-foot">
-        {/* Lang selector — visible in sidebar on mobile */}
         <div className="sb-lang-mobile">
           <select
             className="glass-input"
