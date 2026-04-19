@@ -588,8 +588,8 @@ select.glass-input option { background: #1e1248; color: white; }
 
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)} 40%,80%{transform:translateX(7px)} }
 
-/* Mobile overlay for sidebar */
-.sidebar-overlay { display: none; position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,.4); backdrop-filter: blur(6px); }
+/* Mobile overlay for sidebar — NO blur, just dim */
+.sidebar-overlay { display: none; position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,.55); }
 .sidebar-overlay.visible { display: block; }
 
 /* ══════════════════════════════════════════════════
@@ -619,7 +619,20 @@ select.glass-input option { background: #1e1248; color: white; }
     gap: 6px;
   }
   .ham-btn { display: flex; }
+  /* Constrain the left side so title never pushes into right buttons */
+  .tb-left {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .tb-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 120px;   /* hard cap so it never bleeds into right buttons */
+  }
   .lang-select { max-width: 85px; font-size: .68rem; padding: 6px 8px; }
+  /* Icon buttons: icon only, no text */
   .icon-btn span { display: none; }
   .icon-btn { padding: 7px 9px; }
   .tb-sub { display: none; }
